@@ -1278,7 +1278,7 @@ static void process_frame_cb(evutil_socket_t fd, short events, void *arg) {
 		} else if (!memcmp(str, "check-buffer", sz)) {
 
 			union spoe_data data;
-			enum spoe_data_type type;
+			enum spoe_data_type type = SPOE_UNINITIALIZED;
 
 			if (nbargs != 1)
 				goto skip_message;
