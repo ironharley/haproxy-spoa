@@ -190,9 +190,11 @@ static void release_client(struct client*);
 
 static void check_buffer(struct spoe_frame *frame, struct chunk *chk) {
 	DEBUG(frame->worker, "Chb length %d ", (int)chk->len);
-	DEBUG(frame->worker, "Chb -> %d %d %d %d %d %d %d %d ",
+	DEBUG(frame->worker, "Chb -> %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d",
 			(int)chk->ptr[0], (int)chk->ptr[1], (int)chk->ptr[2], (int)chk->ptr[3],
-			(int)chk->ptr[4], (int)chk->ptr[5], (int)chk->ptr[6], (int)chk->ptr[7]
+			(int)chk->ptr[4], (int)chk->ptr[5], (int)chk->ptr[6], (int)chk->ptr[7],
+			(int)chk->ptr[8], (int)chk->ptr[9], (int)chk->ptr[10], (int)chk->ptr[11],
+			(int)chk->ptr[12], (int)chk->ptr[13], (int)chk->ptr[14], (int)chk->ptr[15]
 																												 );
 }
 
