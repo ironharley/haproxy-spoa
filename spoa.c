@@ -191,7 +191,9 @@ static void release_client(struct client*);
 static void check_buffer(struct spoe_frame *frame, struct chunk *chk) {
 	DEBUG(frame->worker, "Chb length %d ", (int )chk->len);
 	DEBUG(frame->worker,
-			"Chb -> \\x%02x \\x%02x \\x%02x \\x%02x \\x%02x \\x%02x \\x%02x \\x%02x \\x%02x \\x%02x \\x%02x \\x%02x \\x%02x \\x%02x \\x%02x \\x%02x",
+			"Chb -> %02x %02x %02x %02x %02x %02x %02x "
+			       "%02x %02x %02x %02x %02x %02x %02x "
+			       "%02x %02x %02x %02x %02x %02x",
 			(unsigned char )chk->ptr[0], (unsigned char )chk->ptr[1],
 			(unsigned char )chk->ptr[2], (unsigned char )chk->ptr[3],
 			(unsigned char )chk->ptr[4], (unsigned char )chk->ptr[5],
@@ -199,7 +201,10 @@ static void check_buffer(struct spoe_frame *frame, struct chunk *chk) {
 			(unsigned char )chk->ptr[8], (unsigned char )chk->ptr[9],
 			(unsigned char )chk->ptr[10], (unsigned char )chk->ptr[11],
 			(unsigned char )chk->ptr[12], (unsigned char )chk->ptr[13],
-			(unsigned char )chk->ptr[14], (unsigned char )chk->ptr[15]);
+			(unsigned char )chk->ptr[14], (unsigned char )chk->ptr[15],
+			(unsigned char )chk->ptr[16], (unsigned char )chk->ptr[17],
+			(unsigned char )chk->ptr[18], (unsigned char )chk->ptr[19]
+																   );
 }
 
 static void check_ipv4_reputation(struct spoe_frame *frame,
