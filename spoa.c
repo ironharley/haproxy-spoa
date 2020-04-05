@@ -189,7 +189,7 @@ static void release_frame(struct spoe_frame*);
 static void release_client(struct client*);
 
 static void check_buffer(struct spoe_frame *frame, struct chunk *chk) {
-	DEBUG(frame->worker, "Chb length %d ", frame->frag_len);
+	DEBUG(frame->worker, "Chb length %d ", chk->len);
 }
 
 static void check_ipv4_reputation(struct spoe_frame *frame,
