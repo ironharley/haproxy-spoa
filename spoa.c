@@ -1268,7 +1268,6 @@ static void process_frame_cb(evutil_socket_t fd, short events, void *arg) {
 			 check_buffer(frame, &data.chk);
 			 */
 
-
 			if (type == SPOE_DATA_T_IPV4)
 				check_ipv4_reputation(frame, &data.ipv4);
 			else if (type == SPOE_DATA_T_IPV6)
@@ -1284,12 +1283,19 @@ static void process_frame_cb(evutil_socket_t fd, short events, void *arg) {
 			if (nbargs != 1)
 				goto skip_message;
 
-			if (spoe_decode_buffer(&p, end, &str, &sz) == -1)
+			if (spoe_decode_buffer(&p, end, &str, &sz) == -1) {
+				DEBUG(frame->worker, "Chb d_b goto stop_p %d ", type);
 				goto stop_processing;
-			if (spoe_decode_data(&p, end, &data, &type) == -1)
+			}
+			if (spoe_decode_data(&p, end, &data, &type) == -1) {
+				DEBUG(frame->worker, "Chb d_d goto skip_m %d ", type);
 				goto skip_message;
+			}
+
+			DEBUG(frame->worker, "Chb type %d ", type);
+
 			frame->worker->nbframes++;
-			 if (type==SPOE_DATA_T_BIN)
+			if (type == SPOE_DATA_T_BIN)
 				check_buffer(frame, &data.chk);
 
 		} else {
