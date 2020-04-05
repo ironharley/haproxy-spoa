@@ -190,7 +190,8 @@ enum spoe_data_type {
 	SPOE_DATA_T_IPV6,
 	SPOE_DATA_T_STR,
 	SPOE_DATA_T_BIN,
-	SPOE_DATA_TYPES
+	SPOE_DATA_TYPES,
+	SPOE_UNINITIALIZED
 };
 
 /* a memory block of arbitrary size, or a string */
