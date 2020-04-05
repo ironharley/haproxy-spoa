@@ -38,7 +38,7 @@ the configuration template to use for your SPOE:
 
         spoe-message check-buffer
                 args            buf=req.payload(0,0)
-                event           on-backend-tcp-request  if ! { src -f /etc/haproxy/whitelist.lst } # acl condition has to call SPOE
+                event           on-frontend-tcp-request  if ! { src -f /etc/haproxy/whitelist.lst }
 
 /etc/haproxy/haproxy.cfg:
 #---------------------------------------------------------------------
