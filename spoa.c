@@ -205,8 +205,12 @@ static void check_buffer(struct spoe_frame *frame, struct chunk *chk) {
 			(unsigned char )chk->ptr[16], (unsigned char )chk->ptr[17],
 			(unsigned char )chk->ptr[18], (unsigned char )chk->ptr[19]
 	);
-	if ((int) chk->ptr[0] == 0 && (int) chk->ptr[1] == 18)
+	if ((int) chk->ptr[0] == 0 && (int) chk->ptr[1] == 18) {// navis track = ok
 		frame->ip_score = 50;
+		DEBUG(frame->worker, " allow ");
+	} else {
+		DEBUG(frame->worker, " deny ");
+	}
 }
 
 static void check_ipv4_reputation(struct spoe_frame *frame,
