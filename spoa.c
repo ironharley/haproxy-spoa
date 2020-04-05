@@ -240,7 +240,7 @@ static int check_proto_version(struct spoe_frame *frame, char **buf, char *end) 
 	uint64_t sz;
 	int ret;
 
-	/* Get the list of all supported versions by HAProxy */
+	// Get the list of all supported versions by HAProxy
 	if ((*p++ & SPOE_DATA_T_MASK) != SPOE_DATA_T_STR)
 		return -1;
 	ret = spoe_decode_buffer(&p, end, &str, &sz);

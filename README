@@ -1,11 +1,7 @@
-A Random IP reputation service acting as a Stream Processing Offload Agent
---------------------------------------------------------------------------
+Main project: https://github.com/haproxy/haproxy
+Exaple: https://github.com/haproxy/haproxy/tree/master/contrib/spoa_example
 
-This is a very simple service that implement a "random" ip reputation
-service. It will return random scores for all checked IP addresses. It only
-shows you how to implement a ip reputation service or such kind of services
-using the SPOE.
-
+Here:
 
   Start the service
 ---------------------
@@ -29,60 +25,93 @@ Note: A worker is a thread.
 All information about SPOE configuration can be found in "doc/SPOE.txt". Here is
 the configuration template to use for your SPOE:
 
-    [ip-reputation]
+[ip-reputation]
 
-    spoe-agent iprep-agent
-        messages check-client-ip
+        spoe-agent      iprep-agent
+                messages        check-buffer  # check-client-ip
+                option          var-prefix iprep
+                timeout         hello 2s
+                timeout         idle  2m
+                timeout         processing 10ms
+                use-backend     iprep-servers
+                log             global
 
-        option var-prefix iprep
+        spoe-message check-buffer
+                args            buf=req.payload(0,0)
+                event           on-backend-tcp-request  if ! { src -f /etc/haproxy/whitelist.lst } # acl condition has to call SPOE
 
-        timeout hello      100ms
-        timeout idle       30s
-        timeout processing 15ms
+/etc/haproxy/haproxy.cfg:
+#---------------------------------------------------------------------
+# Global settings
+#---------------------------------------------------------------------
+global
+#    lua-load            /home/mitsay/is_navis_track.lua
+    debug
+    daemon
+    log                 127.0.0.1:514       local2 debug
+    log-tag             haproxy-navis
+    stats socket        /var/lib/haproxy/stats mode 660 level admin
+    stats bind-process  1
+    stats timeout       15s
+    user                haproxy
+    group               haproxy
+    chroot              /var/lib/haproxy
+    pidfile             /var/run/haproxy.pid
+    maxconn             4000
 
-        use-backend iprep-backend
+defaults
+    mode               http
+    timeout connect    10s
+    timeout client     10s
+    timeout server     1m
+    maxconn            3000
 
-    spoe-message check-client-ip
-        args src
-        event on-client-session
+frontend        navis_track
+    mode                tcp
+    option              tcplog
+    option              tcpka
+    option              tcp-smart-accept
+    option              nolinger
+    option              logasap
+    log                 global
+    bind                10.0.1.35:9206        # local ip or *:port
 
+    acl                 exceeds_limit   sc_gpc0_rate(0) gt 1
+    tcp-request         connection      track-sc0 src table per_ip_rates
+    tcp-request         connection      sc-inc-gpc0(0) if { sc_http_req_rate(1) eq 1 }
+    tcp-request         connection      reject if exceeds_limit
 
-The engine is in the scope "ip-reputation". So to enable it, you must set the
-following line in a frontend/listener section:
+    filter              spoe engine ip-reputation config /etc/haproxy/iprep.conf
 
-    frontend my-front
-        ...
-        filter spoe engine ip-reputation config /path/spoe-ip-reputation.conf
-	....
+#    acl abuse sc0_http_req_rate gt 10
+#    acl kill  sc0_inc_gpc0 gt 5
+#    acl save  sc0_clr_gpc0 ge 0
+#    tcp-request connection accept if !abuse save
+#    tcp-request connection reject if abuse kill
 
-where "/path/spoe-ip-reputation.conf" is the path to your SPOE configuration
-file. The engine name is important here, it must be the same than the one used
-in the SPOE configuration file.
+#    tcp-request        content         lua.is_navis_track
+    default_backend     navis_backend
+    
+backend         navis_backend
+    mode                tcp
+    option              abortonclose
+#    tcp-request        content accept if { lua.is_navis_track(txn) }
 
-IMPORTANT NOTE:
-    Because we want to send a message on the "on-client-session" event, this
-    SPOE must be attached to a proxy with the frontend capability. If it is
-    declared in a backend section, it will have no effet.
+    balance     leastconn  #least connected server selection
+    server      bb2dev9206      188.93.208.236:9206     check   maxconn 1000
+#    server      bb2dev9207     188.93.208.236:9207     check   maxconn 1000
+#    server      bb2dev9208     188.93.208.236:9208     check   maxconn 1000
+#    server      bb2dev9209     188.93.208.236:9209     check   maxconn 1000
 
+backend                 per_ip_rates
 
-Because, in SPOE configuration file, we declare to use the backend
-"iprep-backend" to communicate with the service, you must define it in HAProxy
-configuration. For example:
+    stick-table type ip size 1m expire 24h store gpc0,gpc0_rate(30s)
 
-    backend iprep-backend
-        mode tcp
-	timeout server 1m
-	server iprep-srv 127.0.0.1:12345 check maxconn 5
+backend         iprep-servers
+        mode    tcp
+        balance roundrobin
+        timeout connect 5s # greater than hello timeout
+        timeout server  3m # greater than idle timeout
+        server  iprep1 127.0.0.1:12345
+#        server iprep2 A2.B2.C2.D2:12345
 
-
-In reply to the "check-client-ip" message, this service will set the variable
-"ip_score" for the session, an integer between 0 and 100. If unchanged, the
-variable prefix is "iprep". So the full variable name will be
-"sess.iprep.ip_score".
-
-You can use it in ACLs to experiment the SPOE feature. For example:
-
-    tcp-request content reject if { var(sess.iprep.ip_score) -m int lt 20 }
-
-With this rule, all IP address with a score lower than 20 will be rejected
-(Remember, this score is random).
