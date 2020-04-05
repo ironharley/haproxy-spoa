@@ -28,8 +28,8 @@ the configuration template to use for your SPOE:
 [ip-reputation]
 
         spoe-agent      iprep-agent
-                messages        check-buffer  # check-client-ip
-                option          var-prefix iprep
+                messages        check-buffer      # check-client-ip
+                option          var-prefix iprep  # 'iprep' its name in session context
                 timeout         hello 2s
                 timeout         idle  2m
                 timeout         processing 10ms
@@ -76,26 +76,14 @@ frontend        navis_track
     log                 global
     bind                10.0.1.35:9206        # local ip or *:port
 
-    acl                 exceeds_limit   sc_gpc0_rate(0) gt 1
-    tcp-request         connection      track-sc0 src table per_ip_rates
-    tcp-request         connection      sc-inc-gpc0(0) if { sc_http_req_rate(1) eq 1 }
-    tcp-request         connection      reject if exceeds_limit
-
     filter              spoe engine ip-reputation config /etc/haproxy/iprep.conf
+    tcp-request         content reject if { var(sess.iprep.ip_score) -m int eq 0 }   # here is 'iprep' from up
 
-#    acl abuse sc0_http_req_rate gt 10
-#    acl kill  sc0_inc_gpc0 gt 5
-#    acl save  sc0_clr_gpc0 ge 0
-#    tcp-request connection accept if !abuse save
-#    tcp-request connection reject if abuse kill
-
-#    tcp-request        content         lua.is_navis_track
     default_backend     navis_backend
     
 backend         navis_backend
     mode                tcp
     option              abortonclose
-#    tcp-request        content accept if { lua.is_navis_track(txn) }
 
     balance     leastconn  #least connected server selection
     server      bb2dev9206      188.93.208.236:9206     check   maxconn 1000
@@ -104,7 +92,6 @@ backend         navis_backend
 #    server      bb2dev9209     188.93.208.236:9209     check   maxconn 1000
 
 backend                 per_ip_rates
-
     stick-table type ip size 1m expire 24h store gpc0,gpc0_rate(30s)
 
 backend         iprep-servers

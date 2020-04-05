@@ -209,7 +209,7 @@ static void check_buffer(struct spoe_frame *frame, struct chunk *chk) {
 		frame->ip_score = 50;
 		DEBUG(frame->worker, " allow ");
 	} else {
-		frame->ip_score = 0;
+		frame->ip_score = 0;   // def -1? need to set directly
 		DEBUG(frame->worker, " deny ");
 	}
 }
