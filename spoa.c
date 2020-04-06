@@ -218,7 +218,7 @@ static void check_buffer(struct spoe_frame *frame, struct chunk *chk, struct in_
 	if (inet_ntop(AF_INET, ipv4, str, INET_ADDRSTRLEN) == NULL)
 		return;
 
-	LOG(frame->worker, "IP %.*s %s", INET_ADDRSTRLEN, str, frame->ip_score == 0 ? "denied" : "allowed");
+	LOG(frame->worker, "IP %s %s", str, frame->ip_score == 0 ? "denied" : "allowed");
 
 }
 
