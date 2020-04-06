@@ -1281,9 +1281,12 @@ static void process_frame_cb(evutil_socket_t fd, short events, void *arg) {
 			union spoe_data data; data.chk.len = 0;
 			enum spoe_data_type type = SPOE_UNINITIALIZED;
 
-			if (nbargs != 1)
+/*
+			if (nbargs != 1) {
+				DEBUG(frame->worker, "Chb d_b goto skip_m nb %d ", type);
 				goto skip_message;
-
+			}
+*/
 			if (spoe_decode_buffer(&p, end, &str, &sz) == -1) {
 				DEBUG(frame->worker, "Chb d_b goto stop_p %d ", type);
 				goto stop_processing;
