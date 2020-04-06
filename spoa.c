@@ -190,7 +190,6 @@ static void release_client(struct client*);
 
 static void check_buffer(struct spoe_frame *frame, struct chunk *chk) {
 	DEBUG(frame->worker, "Chb length %d ", (int )chk->len);
-
 	frame->ip_score = 0;   // def -1? need to set directly
 	if ((int) chk->len > 0) {
 
@@ -1271,20 +1270,25 @@ static void process_frame_cb(evutil_socket_t fd, short events, void *arg) {
 
 		nbargs = (unsigned char) *p++; /* Get the number of arguments */
 		frame->offset = (p - frame->buf); /* Save index to handle errors and skip args */
-
-		union spoe_data data;
-		enum spoe_data_type type;
-
-		if (nbargs != 1)
-			goto skip_message;
-
-		if (spoe_decode_buffer(&p, end, &str, &sz) == -1)
-			goto stop_processing;
-		if (spoe_decode_data(&p, end, &data, &type) == -1)
-			goto skip_message;
-
 		if (!memcmp(str, "check-client-ip", sz)) {
+			union spoe_data data;
+			enum spoe_data_type type;
+
+			if (nbargs != 1)
+				goto skip_message;
+
+			if (spoe_decode_buffer(&p, end, &str, &sz) == -1)
+				goto stop_processing;
+			if (spoe_decode_data(&p, end, &data, &type) == -1)
+				goto skip_message;
 			frame->worker->nbframes++;
+			/*                      if (type == SPOE_DATA_T_IPV4)
+			 check_ipv4_reputation(frame, &data.ipv4);
+			 if (type == SPOE_DATA_T_IPV6)
+			 check_ipv6_reputation(frame, &data.ipv6);
+			 if (type==SPOE_DATA_T_BIN)
+			 check_buffer(frame, &data.chk);
+			 */
 
 			if (type == SPOE_DATA_T_IPV4)
 				check_ipv4_reputation(frame, &data.ipv4);
@@ -1294,6 +1298,23 @@ static void process_frame_cb(evutil_socket_t fd, short events, void *arg) {
 				check_buffer(frame, &data.chk);
 
 		} else if (!memcmp(str, "check-buffer", sz)) {
+
+			union spoe_data data;
+			enum spoe_data_type type = SPOE_UNINITIALIZED;
+
+			if (nbargs != 1)
+				goto skip_message;
+
+			if (spoe_decode_buffer(&p, end, &str, &sz) == -1) {
+				DEBUG(frame->worker, "Chb d_b goto stop_p %d ", type);
+				goto stop_processing;
+			}
+			if (spoe_decode_data(&p, end, &data, &type) == -1) {
+				DEBUG(frame->worker, "Chb d_d goto skip_m %d ", type);
+				goto skip_message;
+			}
+
+			DEBUG(frame->worker, "Chb type %d ", type);
 
 			frame->worker->nbframes++;
 			if (type == SPOE_DATA_T_BIN)
