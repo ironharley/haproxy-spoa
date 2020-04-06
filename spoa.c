@@ -1278,7 +1278,7 @@ static void process_frame_cb(evutil_socket_t fd, short events, void *arg) {
 		frame->offset = (p - frame->buf); /* Save index to handle errors and skip args */
 		if (!memcmp(str, "check-buffer", sz)) {
 
-			union spoe_data data; data.int32 = 0;
+			union spoe_data data; data.chk.len = 0;
 			enum spoe_data_type type = SPOE_UNINITIALIZED;
 
 			if (nbargs != 1)
