@@ -188,11 +188,8 @@ static void unuse_spoe_engine(struct client*);
 static void release_frame(struct spoe_frame*);
 static void release_client(struct client*);
 
-static void check_buffer(struct spoe_frame *frame, union spoe_data *d) {
-	struct chk* chk = d->chk;
-	struct in_addr* ipv4 = d->ipv4;
+static void check_buffer(struct spoe_frame *frame, struct chunk *chk, struct in_addr *ipv4) {
 	DEBUG(frame->worker, "Chb length %d ", (int )chk->len);
-
 	frame->ip_score = 0;   // def -1? need to set directly
 	if ((int) chk->len > 0) {
 
@@ -215,14 +212,17 @@ static void check_buffer(struct spoe_frame *frame, union spoe_data *d) {
 				(unsigned char )chk->ptr[18], (unsigned char )chk->ptr[19],
 				frame->ip_score == 0 ? "denied" : "allowed");
 	}
+
 	char str[INET_ADDRSTRLEN];
 
 	if (inet_ntop(AF_INET, ipv4, str, INET_ADDRSTRLEN) == NULL)
 		return;
 
 	LOG(frame->worker, "IP %.*s %s", INET_ADDRSTRLEN, str, frame->ip_score == 0 ? "denied" : "allowed");
+
 }
 
+/*
 static void check_ipv4_reputation(struct spoe_frame *frame,
 		struct in_addr *ipv4) {
 	char str[INET_ADDRSTRLEN];
@@ -248,6 +248,7 @@ static void check_ipv6_reputation(struct spoe_frame *frame,
 	DEBUG(frame->worker, "IP score for %.*s is %d", INET6_ADDRSTRLEN, str,
 			frame->ip_score);
 }
+*/
 
 /* Check the protocol version. It returns -1 if an error occurred, the number of
  * read bytes otherwise. */
@@ -1300,7 +1301,7 @@ static void process_frame_cb(evutil_socket_t fd, short events, void *arg) {
 
 			frame->worker->nbframes++;
 			if (type == SPOE_DATA_T_BIN)
-				check_buffer(frame, &data);
+				check_buffer(frame, &data.chk, &data.ipv4);
 
 		} else {
 			skip_message: p = frame->buf + frame->offset; /* Restore index */
