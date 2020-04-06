@@ -214,7 +214,7 @@ static void check_buffer(struct spoe_frame *frame, struct chunk *chk, struct in_
 	}
 
 
-	LOG(frame->worker, "IP %s %s", inet_ntoa(*ipv4), frame->ip_score == 0 ? "denied" : "allowed");
+	//LOG(frame->worker, "IP %s %s", inet_ntoa(*ipv4), frame->ip_score == 0 ? "denied" : "allowed");
 
 }
 
@@ -1281,12 +1281,10 @@ static void process_frame_cb(evutil_socket_t fd, short events, void *arg) {
 			union spoe_data data; data.chk.len = 0;
 			enum spoe_data_type type = SPOE_UNINITIALIZED;
 
-/*
 			if (nbargs != 1) {
-				DEBUG(frame->worker, "Chb d_b goto skip_m nb %d ", type);
 				goto skip_message;
 			}
-*/
+
 			if (spoe_decode_buffer(&p, end, &str, &sz) == -1) {
 				DEBUG(frame->worker, "Chb d_b goto stop_p %d ", type);
 				goto stop_processing;
