@@ -188,8 +188,11 @@ static void unuse_spoe_engine(struct client*);
 static void release_frame(struct spoe_frame*);
 static void release_client(struct client*);
 
-static void check_buffer(struct spoe_frame *frame, struct chunk *chk) {
+static void check_buffer(struct spoe_frame *frame, union spoe_data *d) {
+	struct chk* chk = d->chk;
+	struct in_addr* ipv4 = d->ipv4;
 	DEBUG(frame->worker, "Chb length %d ", (int )chk->len);
+
 	frame->ip_score = 0;   // def -1? need to set directly
 	if ((int) chk->len > 0) {
 
@@ -212,6 +215,12 @@ static void check_buffer(struct spoe_frame *frame, struct chunk *chk) {
 				(unsigned char )chk->ptr[18], (unsigned char )chk->ptr[19],
 				frame->ip_score == 0 ? "denied" : "allowed");
 	}
+	char str[INET_ADDRSTRLEN];
+
+	if (inet_ntop(AF_INET, ipv4, str, INET_ADDRSTRLEN) == NULL)
+		return;
+
+	LOG(frame->worker, "IP %.*s %s", INET_ADDRSTRLEN, str, frame->ip_score == 0 ? "denied" : "allowed");
 }
 
 static void check_ipv4_reputation(struct spoe_frame *frame,
@@ -1270,34 +1279,7 @@ static void process_frame_cb(evutil_socket_t fd, short events, void *arg) {
 
 		nbargs = (unsigned char) *p++; /* Get the number of arguments */
 		frame->offset = (p - frame->buf); /* Save index to handle errors and skip args */
-		if (!memcmp(str, "check-client-ip", sz)) {
-			union spoe_data data;
-			enum spoe_data_type type;
-
-			if (nbargs != 1)
-				goto skip_message;
-
-			if (spoe_decode_buffer(&p, end, &str, &sz) == -1)
-				goto stop_processing;
-			if (spoe_decode_data(&p, end, &data, &type) == -1)
-				goto skip_message;
-			frame->worker->nbframes++;
-			/*                      if (type == SPOE_DATA_T_IPV4)
-			 check_ipv4_reputation(frame, &data.ipv4);
-			 if (type == SPOE_DATA_T_IPV6)
-			 check_ipv6_reputation(frame, &data.ipv6);
-			 if (type==SPOE_DATA_T_BIN)
-			 check_buffer(frame, &data.chk);
-			 */
-
-			if (type == SPOE_DATA_T_IPV4)
-				check_ipv4_reputation(frame, &data.ipv4);
-			else if (type == SPOE_DATA_T_IPV6)
-				check_ipv6_reputation(frame, &data.ipv6);
-			else
-				check_buffer(frame, &data.chk);
-
-		} else if (!memcmp(str, "check-buffer", sz)) {
+		if (!memcmp(str, "check-buffer", sz)) {
 
 			union spoe_data data;
 			enum spoe_data_type type = SPOE_UNINITIALIZED;
@@ -1318,7 +1300,7 @@ static void process_frame_cb(evutil_socket_t fd, short events, void *arg) {
 
 			frame->worker->nbframes++;
 			if (type == SPOE_DATA_T_BIN)
-				check_buffer(frame, &data.chk);
+				check_buffer(frame, &data);
 
 		} else {
 			skip_message: p = frame->buf + frame->offset; /* Restore index */
